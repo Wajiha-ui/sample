@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
 # -------------------- 🔧 Improved Training Data --------------------
-num_samples = 10000  # 🔼 Increased sample size for better accuracy
+num_samples = 20000  # 🔼 Increased sample size for better accuracy
 
 np.random.seed(42)  # Ensures reproducibility
 
@@ -17,10 +17,10 @@ data = {
     'age': np.random.randint(18, 60, num_samples),
     'gender': np.random.choice([0, 1], num_samples),  # 0 = Female, 1 = Male
     'body_type': np.random.choice([0, 1, 2], num_samples),  # 0 = Slim, 1 = Athletic, 2 = Curvy
-    'chest': np.random.randint(30, 130, num_samples),
-    'waist': np.random.randint(20, 110, num_samples),  # 🔼 Starts from 20 now
+    'chest': np.random.randint(20, 130, num_samples),  # 🔼 Chest starts from 20 now
+    'waist': np.random.randint(20, 110, num_samples),  # ✅ Waist already starts from 20
     'hip': np.random.randint(30, 130, num_samples),
-    'shoulder_width': np.random.randint(35, 55, num_samples),
+    'shoulder_width': np.random.randint(20, 55, num_samples),  # 🔼 Shoulder width starts from 20 now
     'size': np.random.choice([0, 1, 2], num_samples, p=[0.33, 0.34, 0.33])  # 🔧 Balanced size distribution
 }
 
@@ -35,10 +35,11 @@ X = scaler.fit_transform(X)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 🔧 Improved Model for Higher Accuracy
-model = RandomForestClassifier(
-    n_estimators=200,   # 🔼 More trees
-    max_depth=12,       # 🔼 Increased depth
+# 🔧 Using Gradient Boosting Classifier for Higher Accuracy
+model = GradientBoostingClassifier(
+    n_estimators=300,  # 🔼 More estimators
+    learning_rate=0.1,  # 🔼 Balanced learning rate
+    max_depth=8,  # 🔼 Increased depth
     min_samples_split=4,
     random_state=42
 )
@@ -59,10 +60,10 @@ weight = st.slider("Weight (kg)", 40, 120, 70)
 age = st.slider("Age", 18, 60, 25)
 gender = st.selectbox("Gender", ["Male", "Female"])
 body_type = st.selectbox("Body Type", ["Slim", "Athletic", "Curvy"])
-chest = st.slider("Chest (cm)", 30, 130, 90)
-waist = st.slider("Waist (cm)", 20, 110, 75)  # 🔼 Starts from 20 now
+chest = st.slider("Chest (cm)", 20, 130, 90)  # ✅ Starts from 20 now
+waist = st.slider("Waist (cm)", 20, 110, 75)  # ✅ Already from 20
 hip = st.slider("Hip (cm)", 30, 130, 95)
-shoulder_width = st.slider("Shoulder Width (cm)", 35, 55, 45)
+shoulder_width = st.slider("Shoulder Width (cm)", 20, 55, 45)  # ✅ Starts from 20 now
 
 # Convert user input to model format
 gender_val = 1 if gender == "Male" else 0

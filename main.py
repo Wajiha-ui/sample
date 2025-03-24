@@ -43,7 +43,10 @@ predicted_size = model.predict(input_data)[0]
 
 # Map prediction to size
 size_mapping = {0: "S", 1: "M", 2: "L"}
-recommended_size = size_mapping[int(round(predicted_size))]
+# Ensure the predicted value stays within [0, 1, 2]
+predicted_size = max(0, min(2, round(predicted_size)))
+recommended_size = size_mapping[int(predicted_size)]
+
 
 # Display result
 st.write(f"Recommended Clothing Size: **{recommended_size}**")

@@ -6,27 +6,27 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# -------------------- Fixed Sample Data (Equal-Length Lists) --------------------
-num_samples = 20  # Define a fixed number of samples
+# -------------------- FIX: Ensure All Lists Have the Same Length --------------------
+num_samples = 100  # Fixed sample size to ensure consistency
 
 data = {
-    'height': np.random.randint(150, 200, num_samples).tolist(),
-    'weight': np.random.randint(40, 120, num_samples).tolist(),
-    'age': np.random.randint(18, 60, num_samples).tolist(),
-    'gender': np.random.choice([0, 1], num_samples).tolist(),
-    'body_type': np.random.choice([0, 1, 2], num_samples).tolist(),
-    'chest': np.random.randint(30, 130, num_samples).tolist(),
-    'waist': np.random.randint(30, 110, num_samples).tolist(),
-    'hip': np.random.randint(30, 130, num_samples).tolist(),
-    'shoulder_width': np.random.randint(35, 55, num_samples).tolist(),
-    'size': np.random.choice([0, 1, 2], num_samples).tolist()  # S, M, L
+    'height': np.random.randint(150, 200, num_samples),
+    'weight': np.random.randint(40, 120, num_samples),
+    'age': np.random.randint(18, 60, num_samples),
+    'gender': np.random.choice([0, 1], num_samples),  # 0 = Female, 1 = Male
+    'body_type': np.random.choice([0, 1, 2], num_samples),  # 0 = Slim, 1 = Athletic, 2 = Curvy
+    'chest': np.random.randint(30, 130, num_samples),
+    'waist': np.random.randint(30, 110, num_samples),
+    'hip': np.random.randint(30, 130, num_samples),
+    'shoulder_width': np.random.randint(35, 55, num_samples),
+    'size': np.random.choice([0, 1, 2], num_samples)  # 0 = S, 1 = M, 2 = L
 }
 
-df = pd.DataFrame(data)  # ✅ Now all columns have the same length
+df = pd.DataFrame(data)  # ✅ FIXED: Now all columns have exactly `num_samples` values
 
 # -------------------- Preprocessing --------------------
-X = df.iloc[:, :-1]
-y = df['size']
+X = df.iloc[:, :-1]  # All columns except 'size'
+y = df['size']  # Target variable
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
@@ -52,9 +52,9 @@ weight = st.slider("Weight (kg)", 40, 120, 70)
 age = st.slider("Age", 18, 60, 25)
 gender = st.selectbox("Gender", ["Male", "Female"])
 body_type = st.selectbox("Body Type", ["Slim", "Athletic", "Curvy"])
-chest = st.selectbox("Chest (cm)", list(range(30, 131, 5)))
-waist = st.selectbox("Waist (cm)", list(range(30, 111, 5)))
-hip = st.selectbox("Hip (cm)", list(range(30, 131, 5)))
+chest = st.slider("Chest (cm)", 30, 130, 90)
+waist = st.slider("Waist (cm)", 30, 110, 75)
+hip = st.slider("Hip (cm)", 30, 130, 95)
 shoulder_width = st.slider("Shoulder Width (cm)", 35, 55, 45)
 
 # Convert user input to model format

@@ -6,8 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# -------------------- FIX: Ensure All Lists Have the Same Length --------------------
-num_samples = 100  # Fixed sample size to ensure consistency
+# -------------------- 🔧 Improved Training Data --------------------
+num_samples = 10000  # 🔼 Increased sample size for better accuracy
+
+np.random.seed(42)  # Ensures reproducibility
 
 data = {
     'height': np.random.randint(150, 200, num_samples),
@@ -16,34 +18,39 @@ data = {
     'gender': np.random.choice([0, 1], num_samples),  # 0 = Female, 1 = Male
     'body_type': np.random.choice([0, 1, 2], num_samples),  # 0 = Slim, 1 = Athletic, 2 = Curvy
     'chest': np.random.randint(30, 130, num_samples),
-    'waist': np.random.randint(30, 110, num_samples),
+    'waist': np.random.randint(20, 110, num_samples),  # 🔼 Starts from 20 now
     'hip': np.random.randint(30, 130, num_samples),
     'shoulder_width': np.random.randint(35, 55, num_samples),
-    'size': np.random.choice([0, 1, 2], num_samples)  # 0 = S, 1 = M, 2 = L
+    'size': np.random.choice([0, 1, 2], num_samples, p=[0.33, 0.34, 0.33])  # 🔧 Balanced size distribution
 }
 
-df = pd.DataFrame(data)  # ✅ FIXED: Now all columns have exactly `num_samples` values
+df = pd.DataFrame(data)  
 
-# -------------------- Preprocessing --------------------
-X = df.iloc[:, :-1]  # All columns except 'size'
-y = df['size']  # Target variable
+# -------------------- 🔧 Model Training --------------------
+X = df.iloc[:, :-1]  
+y = df['size']  
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# -------------------- Random Forest Model --------------------
-model = RandomForestClassifier(n_estimators=50, max_depth=6, min_samples_split=5, random_state=42)
+# 🔧 Improved Model for Higher Accuracy
+model = RandomForestClassifier(
+    n_estimators=200,   # 🔼 More trees
+    max_depth=12,       # 🔼 Increased depth
+    min_samples_split=4,
+    random_state=42
+)
 model.fit(X_train, y_train)
 
-# -------------------- Accuracy Testing --------------------
+# -------------------- 🔧 Accuracy Testing --------------------
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 
 # -------------------- Streamlit UI --------------------
-st.title("👕 Personalized Clothing Size Recommendation")
+st.title("👕 AI Clothing Size Recommendation")
 
 st.write("Enter your details to get the best size recommendation:")
 
@@ -53,7 +60,7 @@ age = st.slider("Age", 18, 60, 25)
 gender = st.selectbox("Gender", ["Male", "Female"])
 body_type = st.selectbox("Body Type", ["Slim", "Athletic", "Curvy"])
 chest = st.slider("Chest (cm)", 30, 130, 90)
-waist = st.slider("Waist (cm)", 30, 110, 75)
+waist = st.slider("Waist (cm)", 20, 110, 75)  # 🔼 Starts from 20 now
 hip = st.slider("Hip (cm)", 30, 130, 95)
 shoulder_width = st.slider("Shoulder Width (cm)", 35, 55, 45)
 

@@ -1,52 +1,64 @@
 import streamlit as st
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.preprocessing import StandardScaler
 
-# Sample dataset (replace with real data later)
+# -------------------- Data Preparation --------------------
+st.title("👕 AI-Powered Clothing Size Predictor")
+
+# Sample dataset (This should ideally be expanded with real-world data)
 data = {
-    'height': [170, 160, 180, 165, 175, 158, 169, 172],
-    'weight': [60, 50, 70, 55, 65, 48, 63, 68],
-    'age': [25, 22, 28, 24, 27, 21, 26, 29],
-    'gender': [1, 1, 0, 0, 1, 1, 0, 0],
-    'body_type': [1, 2, 0, 1, 1, 0, 2, 1],
-    'size': [1, 0, 2, 1, 2, 0, 1, 2]
+    'height': [170, 160, 180, 165, 175, 158, 169, 172, 155, 185, 190, 178, 162, 177, 168, 182, 173, 159, 176, 161],
+    'weight': [60, 50, 70, 55, 65, 48, 63, 68, 45, 75, 80, 72, 52, 67, 62, 78, 66, 49, 64, 53],
+    'age': [25, 22, 28, 24, 27, 21, 26, 29, 20, 30, 35, 32, 23, 31, 27, 33, 26, 19, 28, 21],
+    'gender': [1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1],  # 0 = Male, 1 = Female
+    'body_type': [1, 2, 0, 1, 1, 0, 2, 1, 2, 0, 0, 1, 2, 1, 0, 1, 1, 2, 0, 2],  # 0 = Ecto, 1 = Meso, 2 = Endo
+    'size': [1, 0, 2, 1, 2, 0, 1, 2, 0, 2, 2, 2, 0, 1, 0, 2, 1, 0, 1, 0]  # 0 = S, 1 = M, 2 = L
 }
 
 df = pd.DataFrame(data)
-X = df[['height', 'weight', 'age', 'gender', 'body_type']]
+
+# Features & Target
+X = df[['height', 'weight', 'age', 'gender', 'body_type']].copy()
 y = df['size']
 
-# Train a model
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-model = LinearRegression()
-model.fit(X_train, y_train)
+# Standardize numerical features safely
+scaler = StandardScaler()
+X.loc[:, ['height', 'weight', 'age']] = scaler.fit_transform(X[['height', 'weight', 'age']])
 
-# Streamlit UI
-st.title("Personalized Clothing Size Recommendation")
+# Train a Decision Tree Classifier
+model = DecisionTreeClassifier(max_depth=5, min_samples_split=3, min_samples_leaf=3, random_state=42)
+model.fit(X, y)
 
-# User Inputs
-height = st.number_input("Enter your height (cm)", min_value=100, max_value=250, value=170)
-weight = st.number_input("Enter your weight (kg)", min_value=30, max_value=200, value=70)
-age = st.number_input("Enter your age", min_value=10, max_value=100, value=25)
-gender = st.radio("Select your gender", ("Male", "Female"))
-body_type = st.selectbox("Select your body type", ["Ectomorph", "Mesomorph", "Endomorph"])
+# -------------------- Streamlit UI --------------------
 
-# Encoding inputs
-gender = 0 if gender == "Male" else 1
-body_type = {"Ectomorph": 0, "Mesomorph": 1, "Endomorph": 2}[body_type]
+# Input fields
+st.subheader("Enter Your Details:")
+height = st.number_input("Height (cm)", min_value=140, max_value=220, value=170, step=1)
+weight = st.number_input("Weight (kg)", min_value=40, max_value=150, value=70, step=1)
+age = st.number_input("Age", min_value=15, max_value=80, value=25, step=1)
+gender = st.radio("Gender", ["Male", "Female"])
+body_type = st.radio("Body Type", ["Ectomorph (Slim)", "Mesomorph (Athletic)", "Endomorph (Broad)"])
 
-# Predict size
-input_data = np.array([[height, weight, age, gender, body_type]])
-predicted_size = model.predict(input_data)[0]
+# Convert inputs to numerical values
+gender_value = 0 if gender == "Male" else 1
+body_type_mapping = {"Ectomorph (Slim)": 0, "Mesomorph (Athletic)": 1, "Endomorph (Broad)": 2}
+body_type_value = body_type_mapping[body_type]
 
-# Map prediction to size
-size_mapping = {0: "S", 1: "M", 2: "L"}
-# Ensure the predicted value stays within [0, 1, 2]
-predicted_size = max(0, min(2, round(predicted_size)))
-recommended_size = size_mapping[int(predicted_size)]
+# Predict button
+if st.button("🔍 Predict Clothing Size"):
+    # Prepare input data
+    user_input = pd.DataFrame([[height, weight, age, gender_value, body_type_value]],
+                              columns=['height', 'weight', 'age', 'gender', 'body_type'])
 
+    # Apply scaling
+    user_input.loc[:, ['height', 'weight', 'age']] = scaler.transform(user_input[['height', 'weight', 'age']])
 
-# Display result
-st.write(f"Recommended Clothing Size: **{recommended_size}**")
+    # Make prediction
+    predicted_size = model.predict(user_input)[0]
+
+    # Size mapping
+    size_mapping = {0: "S", 1: "M", 2: "L"}
+    st.success(f"🎯 Recommended Size: **{size_mapping[predicted_size]}**")

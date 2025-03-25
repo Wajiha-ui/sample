@@ -1,89 +1,60 @@
-import os
-import subprocess
-
-# Force install xgboost
-subprocess.run(["pip", "install", "--no-cache-dir", "xgboost"], check=True)
-
 import streamlit as st
 import pandas as pd
 import numpy as np
-import xgboost as xgb  # ✅ Should work now
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# -------------------- ⚡ Fast Data Loading --------------------
-@st.cache_data
-def load_data():
-    np.random.seed(42)
-    num_samples = 10000  # Less data = Faster training
-    data = {
-        'height': np.random.normal(175, 10, num_samples),
-        'weight': np.random.normal(75, 15, num_samples),
-        'age': np.random.randint(18, 60, num_samples),
-        'gender': np.random.choice([0, 1], num_samples),
-        'body_type': np.random.choice([0, 1, 2], num_samples),
-        'chest': np.random.normal(95, 15, num_samples),
-        'waist': np.random.normal(85, 12, num_samples),
-        'hip': np.random.normal(95, 12, num_samples),
-        'shoulder_width': np.random.normal(45, 5, num_samples),
-        'size': np.random.choice([0, 1, 2], num_samples, p=[0.33, 0.34, 0.33])
-    }
-    return pd.DataFrame(data)
+# Load or create a sample dataset (replace with real European size data later)
+data = {
+    "height": np.random.randint(150, 200, 500),
+    "weight": np.random.randint(45, 120, 500),
+    "age": np.random.randint(18, 65, 500),
+    "chest": np.random.randint(30, 60, 500),
+    "waist": np.random.randint(20, 50, 500),
+    "hips": np.random.randint(30, 60, 500),
+    "shoulder": np.random.randint(20, 50, 500),
+    "size": np.random.choice(["XS", "S", "M", "L", "XL", "XXL"], 500)
+}
 
-df = load_data()
+df = pd.DataFrame(data)
 
-# -------------------- ⚡ Faster Model Training --------------------
-X = df.iloc[:, :-1]
-y = df['size']
-
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
+# Split dataset
+X = df.drop(columns=["size"])
+y = df["size"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 🔧 **XGBoost with Faster Settings**
-model = xgb.XGBClassifier(
-    n_estimators=100,  # ✅ Reduced from 500 to 100
-    learning_rate=0.1,  # ✅ Faster convergence
-    max_depth=5,  # ✅ Lower complexity = faster inference
-    subsample=0.7,
-    colsample_bytree=0.7,
-    random_state=42
-)
-model.fit(X_train, y_train)
+# Standardize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-# -------------------- ✅ Fast Accuracy Calculation --------------------
-y_pred = model.predict(X_test)
-accuracy = accuracy_score(y_test, y_pred)
-mae = mean_absolute_error(y_test, y_pred)
+# Train Random Forest model
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train_scaled, y_train)
 
-# -------------------- ⚡ Streamlit UI --------------------
-st.title("👕 AI Clothing Size Recommendation (Europe)")
+# Evaluate
+y_pred = rf_model.predict(X_test_scaled)
+accuracy = accuracy_score(y_test, y_pred) * 100
+mae = mean_absolute_error(pd.factorize(y_test)[0], pd.factorize(y_pred)[0])
 
-st.write("Enter your details to get the best size recommendation:")
+# Streamlit UI
+st.title("Personalized Clothing Size Recommendation")
+st.write(f"✅ Accuracy: {accuracy:.2f}% | 📉 MAE: {mae:.2f}")
 
-height = st.slider("Height (cm)", 150, 200, 175)
-weight = st.slider("Weight (kg)", 40, 120, 75)
-age = st.slider("Age", 18, 60, 30)
-gender = st.selectbox("Gender", ["Male", "Female"])
-body_type = st.selectbox("Body Type", ["Slim", "Athletic", "Curvy"])
-chest = st.slider("Chest (cm)", 20, 130, 95)
-waist = st.slider("Waist (cm)", 20, 110, 85)
-hip = st.slider("Hip (cm)", 30, 130, 95)
-shoulder_width = st.slider("Shoulder Width (cm)", 20, 55, 45)
+# User input
+height = st.slider("Height (cm)", 150, 200, 170)
+weight = st.slider("Weight (kg)", 45, 120, 70)
+age = st.slider("Age", 18, 65, 30)
+chest = st.slider("Chest (cm)", 30, 60, 40)
+waist = st.slider("Waist (cm)", 20, 50, 30)
+hips = st.slider("Hips (cm)", 30, 60, 40)
+shoulder = st.slider("Shoulder Width (cm)", 20, 50, 35)
 
-# Convert user input to model format
-gender_val = 1 if gender == "Male" else 0
-body_type_val = {"Slim": 0, "Athletic": 1, "Curvy": 2}[body_type]
+# Make prediction
+input_data = np.array([[height, weight, age, chest, waist, hips, shoulder]])
+input_data_scaled = scaler.transform(input_data)
+predicted_size = rf_model.predict(input_data_scaled)[0]
 
-input_data = np.array([[height, weight, age, gender_val, body_type_val, chest, waist, hip, shoulder_width]])
-input_data = scaler.transform(input_data)
-
-# Predict size
-predicted_size = model.predict(input_data)[0]
-size_mapping = {0: "S", 1: "M", 2: "L"}
-recommended_size = size_mapping[predicted_size]
-
-st.subheader(f"🛍 Recommended Size: **{recommended_size}**")
-st.write(f"📊 Accuracy: **{accuracy * 100:.2f}%** | 📉 Mean Absolute Error: **{mae:.2f}**")
+st.subheader(f"🛍 Recommended Size: {predicted_size}")

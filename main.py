@@ -1,7 +1,12 @@
+import os
+
+# Ensure xgboost is installed
+os.system("pip install xgboost")
+
 import streamlit as st
 import pandas as pd
 import numpy as np
-import xgboost as xgb
+import xgboost as xgb  # ✅ This should now work
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error

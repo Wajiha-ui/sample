@@ -1,69 +1,71 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import GradientBoostingClassifier
+import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
-# -------------------- 🔧 Improved Training Data --------------------
-num_samples = 20000  # 🔼 Increased sample size for better accuracy
+# -------------------- ⚡ Fast Data Loading --------------------
+@st.cache_data
+def load_data():
+    np.random.seed(42)
+    num_samples = 10000  # Less data = Faster training
+    data = {
+        'height': np.random.normal(175, 10, num_samples),
+        'weight': np.random.normal(75, 15, num_samples),
+        'age': np.random.randint(18, 60, num_samples),
+        'gender': np.random.choice([0, 1], num_samples),
+        'body_type': np.random.choice([0, 1, 2], num_samples),
+        'chest': np.random.normal(95, 15, num_samples),
+        'waist': np.random.normal(85, 12, num_samples),
+        'hip': np.random.normal(95, 12, num_samples),
+        'shoulder_width': np.random.normal(45, 5, num_samples),
+        'size': np.random.choice([0, 1, 2], num_samples, p=[0.33, 0.34, 0.33])
+    }
+    return pd.DataFrame(data)
 
-np.random.seed(42)  # Ensures reproducibility
+df = load_data()
 
-data = {
-    'height': np.random.randint(150, 200, num_samples),
-    'weight': np.random.randint(40, 120, num_samples),
-    'age': np.random.randint(18, 60, num_samples),
-    'gender': np.random.choice([0, 1], num_samples),  # 0 = Female, 1 = Male
-    'body_type': np.random.choice([0, 1, 2], num_samples),  # 0 = Slim, 1 = Athletic, 2 = Curvy
-    'chest': np.random.randint(20, 130, num_samples),  # 🔼 Chest starts from 20 now
-    'waist': np.random.randint(20, 110, num_samples),  # ✅ Waist already starts from 20
-    'hip': np.random.randint(30, 130, num_samples),
-    'shoulder_width': np.random.randint(20, 55, num_samples),  # 🔼 Shoulder width starts from 20 now
-    'size': np.random.choice([0, 1, 2], num_samples, p=[0.33, 0.34, 0.33])  # 🔧 Balanced size distribution
-}
-
-df = pd.DataFrame(data)  
-
-# -------------------- 🔧 Model Training --------------------
-X = df.iloc[:, :-1]  
-y = df['size']  
+# -------------------- ⚡ Faster Model Training --------------------
+X = df.iloc[:, :-1]
+y = df['size']
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 🔧 Using Gradient Boosting Classifier for Higher Accuracy
-model = GradientBoostingClassifier(
-    n_estimators=300,  # 🔼 More estimators
-    learning_rate=0.1,  # 🔼 Balanced learning rate
-    max_depth=8,  # 🔼 Increased depth
-    min_samples_split=4,
+# 🔧 **XGBoost with Faster Settings**
+model = xgb.XGBClassifier(
+    n_estimators=100,  # ✅ Reduced from 500 to 100
+    learning_rate=0.1,  # ✅ Faster convergence
+    max_depth=5,  # ✅ Lower complexity = faster inference
+    subsample=0.7,
+    colsample_bytree=0.7,
     random_state=42
 )
 model.fit(X_train, y_train)
 
-# -------------------- 🔧 Accuracy Testing --------------------
+# -------------------- ✅ Fast Accuracy Calculation --------------------
 y_pred = model.predict(X_test)
 accuracy = accuracy_score(y_test, y_pred)
 mae = mean_absolute_error(y_test, y_pred)
 
-# -------------------- Streamlit UI --------------------
-st.title("👕 AI Clothing Size Recommendation")
+# -------------------- ⚡ Streamlit UI --------------------
+st.title("👕 AI Clothing Size Recommendation (Europe)")
 
 st.write("Enter your details to get the best size recommendation:")
 
-height = st.slider("Height (cm)", 150, 200, 170)
-weight = st.slider("Weight (kg)", 40, 120, 70)
-age = st.slider("Age", 18, 60, 25)
+height = st.slider("Height (cm)", 150, 200, 175)
+weight = st.slider("Weight (kg)", 40, 120, 75)
+age = st.slider("Age", 18, 60, 30)
 gender = st.selectbox("Gender", ["Male", "Female"])
 body_type = st.selectbox("Body Type", ["Slim", "Athletic", "Curvy"])
-chest = st.slider("Chest (cm)", 20, 130, 90)  # ✅ Starts from 20 now
-waist = st.slider("Waist (cm)", 20, 110, 75)  # ✅ Already from 20
+chest = st.slider("Chest (cm)", 20, 130, 95)
+waist = st.slider("Waist (cm)", 20, 110, 85)
 hip = st.slider("Hip (cm)", 30, 130, 95)
-shoulder_width = st.slider("Shoulder Width (cm)", 20, 55, 45)  # ✅ Starts from 20 now
+shoulder_width = st.slider("Shoulder Width (cm)", 20, 55, 45)
 
 # Convert user input to model format
 gender_val = 1 if gender == "Male" else 0

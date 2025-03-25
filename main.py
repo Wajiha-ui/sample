@@ -1,13 +1,12 @@
 import os
 
-# Force install xgboost if not found
-os.system("pip uninstall -y xgboost")
-os.system("pip install xgboost")
+# Force install xgboost if missing
+os.system("pip install --no-cache-dir xgboost")
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-import xgboost as xgb  # ✅ Should work now
+import xgboost as xgb  # ✅ Should now work
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error

@@ -6,6 +6,16 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, mean_absolute_error
 
+from sklearn.preprocessing import LabelEncoder
+
+# Encode size labels into numbers
+le = LabelEncoder()
+y_test_encoded = le.fit_transform(y_test)  # Convert test labels to numbers
+y_pred_encoded = le.transform(y_pred)  # Convert predicted labels to numbers
+
+# Compute MAE
+mae = mean_absolute_error(y_test_encoded, y_pred_encoded)
+
 # European Size Chart Data (Realistic Measurements)
 data = {
     "height": [160, 165, 170, 175, 180, 185, 190, 195],
